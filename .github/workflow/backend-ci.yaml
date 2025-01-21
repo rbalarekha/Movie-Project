@@ -1,0 +1,90 @@
+
+name: backend
+on:
+  pull_request:
+    branches:
+      - main
+ 
+jobs:
+  Lint_Job:
+    runs-on: ubuntu-latest
+    defaults:  
+     run:
+      shell: bash
+      working-directory: ./starter/backend
+
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1  
+
+      - name: Set up Python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9.20"   
+        
+      - name: flake8 Lint
+        uses: py-actions/flake8@v2
+
+  TEST_JOB: 
+   runs-on: ubuntu-latest
+   defaults:  
+     run:
+      shell: bash
+      working-directory: ./starter/backend
+      
+   steps:
+     - name: Check out source repository
+       uses: actions/checkout@v3
+
+     - name: Configure AWS credentials
+       uses: aws-actions/configure-aws-credentials@v2
+       with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1  
+
+     - name: Set up Python environment
+       uses: actions/setup-python@v4
+       with:
+          python-version: "3.9.20"
+
+     - name: Install pipenv
+       run: pip install pipenv
+       
+     - name: Run tests
+       run: |
+           pipenv install --dev
+           pip install pytest
+           pip install flask 
+           pip install flask_cors
+           pytest test_app.py 
+          
+  BUILD_JOB: 
+    runs-on: ubuntu-latest
+    needs: [Lint_Job, TEST_JOB]
+    defaults:  
+     run:
+      shell: bash
+      working-directory: ./starter/backend
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: list
+      run: |
+          pwd
+          ls -lrth
+    - name: Build Docker Image
+      run: |
+          echo Building the Docker image...          
+          docker build -t build-image .     
+ 
+   
+  
